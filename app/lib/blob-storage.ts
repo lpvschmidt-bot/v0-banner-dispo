@@ -24,19 +24,15 @@ async function ensureLocalDirectoryExists() {
 
 const getFileName = (year: string, week: string) => `banner-data-${year}-KW${week}.json`
 
-// Helper: pick the matching blob; falls back to first result (legacy blobs may have random suffixes)
-function pickBlob(blobs: ListBlobResultBlob[], fileName: string) {
-  return blobs.find((blob) => blob.pathname === fileName) ?? blobs[0] ?? null
-}
-
 export async function getJsonData(year: string, week: string): Promise<any[] | null> {
   try {
     if (isBlobAvailable()) {
       // Use Vercel Blob storage
       const fileName = getFileName(year, week)
-      // Prefix search to support legacy blobs with random suffixes
-      const { blobs } = await list({ prefix: fileName })
-      const jsonBlob = pickBlob(blobs, fileName)
+      // List all blobs and filter by prefix to support legacy blobs with random suffixes
+      const { blobs } = await list()
+      const matchingBlobs = blobs.filter((blob) => blob.pathname.startsWith(fileName))
+      const jsonBlob = matchingBlobs[0] ?? null
 
       if (!jsonBlob) {
         return null
