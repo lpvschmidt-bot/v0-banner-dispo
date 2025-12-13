@@ -1,5 +1,3 @@
-import Image from "next/image"
-
 interface BannerData {
   id: string
   position: string
@@ -34,12 +32,10 @@ export default function BannerPreview({ banner }: BannerPreviewProps) {
         {banner.format === "Topbanner" && (
           <div className="w-full h-[90px] bg-gray-200 flex items-center justify-center overflow-hidden">
             {banner.creative && (
-              <Image
-                src={banner.creative || "/placeholder.svg"}
+              <img
+                src={banner.creative}
                 alt={banner.altText}
-                width={728}
-                height={90}
-                className="object-cover"
+                className="w-full h-full object-cover"
               />
             )}
           </div>
@@ -47,12 +43,10 @@ export default function BannerPreview({ banner }: BannerPreviewProps) {
         {banner.format === "Rectangle" && (
           <div className="w-[300px] h-[250px] bg-gray-200 flex items-center justify-center overflow-hidden">
             {banner.creative && (
-              <Image
-                src={banner.creative || "/placeholder.svg"}
+              <img
+                src={banner.creative}
                 alt={banner.altText}
-                width={300}
-                height={250}
-                className="object-cover"
+                className="w-full h-full object-cover"
               />
             )}
           </div>
@@ -60,12 +54,10 @@ export default function BannerPreview({ banner }: BannerPreviewProps) {
         {banner.format === "Half-Page-Ad" && (
           <div className="w-[300px] h-[600px] bg-gray-200 flex items-center justify-center overflow-hidden">
             {banner.creative && (
-              <Image
-                src={banner.creative || "/placeholder.svg"}
+              <img
+                src={banner.creative}
                 alt={banner.altText}
-                width={300}
-                height={600}
-                className="object-cover"
+                className="w-full h-full object-cover"
               />
             )}
           </div>
@@ -74,12 +66,10 @@ export default function BannerPreview({ banner }: BannerPreviewProps) {
           <div className="flex flex-col space-y-4">
             <div className="w-full h-[250px] bg-gray-200 flex items-center justify-center overflow-hidden">
               {banner.creative && (
-                <Image
-                  src={banner.creative || "/placeholder.svg"}
+                <img
+                  src={banner.creative}
                   alt={banner.altText}
-                  width={300}
-                  height={250}
-                  className="object-cover"
+                  className="w-full h-full object-cover"
                 />
               )}
             </div>
@@ -101,7 +91,7 @@ export default function BannerPreview({ banner }: BannerPreviewProps) {
         )}
       </a>
       {banner.trackingPixel && (
-        <img src={banner.trackingPixel || "/placeholder.svg"} alt="Tracking Pixel" className="hidden" />
+        <img src={banner.trackingPixel} alt="Tracking Pixel" className="hidden" />
       )}
     </div>
   )
