@@ -1,10 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  // Add this to disable Vercel's default authentication for preview deployments
-  experimental: {
-    isrMemoryCacheSize: 0,
-  },
+  // Note: experimental keys removed to match the Next.js version used
   async headers() {
     return [
       {
