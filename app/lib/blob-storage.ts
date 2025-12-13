@@ -31,10 +31,13 @@ export async function getJsonData(year: string, week: string): Promise<any[] | n
       const fileName = getFileName(year, week)
       // List all blobs and filter by prefix to support legacy blobs with random suffixes
       const { blobs } = await list()
+      console.log(`[BLOB-DEBUG] Looking for "${fileName}", found ${blobs.length} total blobs:`, blobs.map(b => b.pathname))
       const matchingBlobs = blobs.filter((blob) => blob.pathname.startsWith(fileName))
+      console.log(`[BLOB-DEBUG] Matching blobs:`, matchingBlobs.map(b => b.pathname))
       const jsonBlob = matchingBlobs[0] ?? null
 
       if (!jsonBlob) {
+        console.log(`[BLOB-DEBUG] No blob found for "${fileName}"`)
         return null
       }
 
