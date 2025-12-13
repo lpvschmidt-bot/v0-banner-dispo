@@ -61,7 +61,7 @@ const initialBannerData: BannerData = {
 const getCurrentYearAndWeek = () => {
   const now = new Date()
   const start = new Date(now.getFullYear(), 0, 1)
-  const diff = now - start
+  const diff = now.getTime() - start.getTime()
   const oneDay = 1000 * 60 * 60 * 24
   const day = Math.floor(diff / oneDay)
   const week = Math.ceil((day + start.getDay() + 1) / 7)
@@ -107,7 +107,7 @@ export default function BannerForm() {
       const data = await response.json()
       console.log(
         "Geladene Daten:",
-        data.map((banner) => ({ id: banner.id, kundeBanner: banner.kundeBanner })),
+        data.map((banner: any) => ({ id: banner.id, kundeBanner: banner.kundeBanner })),
       )
       if (Array.isArray(data) && data.length > 0) {
         setBannerData(data)
@@ -252,7 +252,7 @@ export default function BannerForm() {
         console.log("Gespeicherte Datei:", result.savedUrl)
         console.log(
           "Nach dem Speichern - kundeBanner Werte:",
-          result.data.map((banner) => ({ id: banner.id, kundeBanner: banner.kundeBanner })),
+            result.data.map((banner: any) => ({ id: banner.id, kundeBanner: banner.kundeBanner })),
         )
 
         if (Array.isArray(result.data)) {

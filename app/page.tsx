@@ -1,17 +1,14 @@
 import { redirect } from "next/navigation"
 import BannerForm from "./components/BannerForm"
 
-export default function Home({
-  searchParams,
-}: {
-  searchParams: { [key: string]: string | string[] | undefined }
-}) {
+export default function Home({ searchParams }: { searchParams: any }) {
   // Überprüfen Sie, ob das Codewort in der URL vorhanden ist
   const code = searchParams.code
 
   // Wenn kein Codewort vorhanden ist, leiten Sie zur gleichen Seite mit Codewort weiter
   if (!code || code !== "banner2024") {
     redirect("/?code=banner2024")
+    return null
   }
 
   return (
