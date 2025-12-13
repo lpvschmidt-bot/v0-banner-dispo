@@ -1,4 +1,4 @@
-import { put, list, del } from "@vercel/blob"
+import { put, list, del, type ListBlobResultBlob } from "@vercel/blob"
 import fs from "fs/promises"
 import path from "path"
 
@@ -24,13 +24,19 @@ async function ensureLocalDirectoryExists() {
 
 const getFileName = (year: string, week: string) => `banner-data-${year}-KW${week}.json`
 
+// Helper: pick the matching blob; falls back to first result (legacy blobs may have random suffixes)
+function pickBlob(blobs: ListBlobResultBlob[], fileName: string) {
+  return blobs.find((blob) => blob.pathname === fileName) ?? blobs[0] ?? null
+}
+
 export async function getJsonData(year: string, week: string): Promise<any[] | null> {
   try {
     if (isBlobAvailable()) {
       // Use Vercel Blob storage
-      const { blobs } = await list()
       const fileName = getFileName(year, week)
-      const jsonBlob = blobs.find((blob) => blob.pathname === fileName)
+      // Prefix search to support legacy blobs with random suffixes
+      const { blobs } = await list({ prefix: fileName })
+      const jsonBlob = pickBlob(blobs, fileName)
 
       if (!jsonBlob) {
         return null
@@ -68,16 +74,16 @@ export async function saveJsonData(year: string, week: string, data: any[]): Pro
     const jsonString = JSON.stringify(data, null, 2)
 
     if (isBlobAvailable()) {
-      // Use Vercel Blob storage
+      // Use Vercel Blob storage; disable random suffix so read finds exact filename
       const fileName = getFileName(year, week)
       const jsonBlob = new Blob([jsonString], {
         type: "application/json",
       })
-      const { url } = await put(fileName, jsonBlob, { access: "public" })
+      const { url } = await put(fileName, jsonBlob, { access: "public", addRandomSuffix: false })
 
-      // Create backup
+      // Create backup (no random suffix)
       const backupFileName = `${fileName}.backup`
-      await put(backupFileName, jsonBlob, { access: "public" })
+      await put(backupFileName, jsonBlob, { access: "public", addRandomSuffix: false })
 
       return url
     } else {
