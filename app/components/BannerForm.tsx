@@ -77,6 +77,8 @@ const cleanKundeBanner = (value: string): string => {
 }
 
 export default function BannerForm() {
+  const BYPASS_TOKEN = process.env.NEXT_PUBLIC_VERCEL_BYPASS_TOKEN
+
   const [bannerData, setBannerData] = useState<BannerData[]>([])
   const [globalData, setGlobalData] = useState<GlobalData>(() => {
     const { year, week } = getCurrentYearAndWeek()
@@ -92,11 +94,25 @@ export default function BannerForm() {
   const [jsonPreview, setJsonPreview] = useState<string>("")
   const [isPreviewOpen, setIsPreviewOpen] = useState(false)
 
+  // Versuche den Vercel Deployment Protection Bypass-Cookie zu setzen (falls Token vorhanden)
+  useEffect(() => {
+    if (typeof window !== "undefined" && BYPASS_TOKEN) {
+      // Setzt das Bypass-Cookie für die Domain, damit nachfolgende API-Calls nicht geblockt werden
+      const url = `/?x-vercel-protection-bypass=${BYPASS_TOKEN}&x-vercel-set-bypass-cookie=samesitenone`
+      fetch(url).catch(() => {})
+    }
+  }, [BYPASS_TOKEN])
+
+  const getBypassSuffix = () => (BYPASS_TOKEN ? `&x-vercel-protection-bypass=${BYPASS_TOKEN}` : "")
+
   const loadBannerData = useCallback(async (year: string, week: string) => {
     try {
-      const response = await fetch(`/api/banner-data?year=${year}&week=${week}&code=banner2024&t=${Date.now()}`, {
+      const response = await fetch(
+        `/api/banner-data?year=${year}&week=${week}&code=banner2024${getBypassSuffix()}&t=${Date.now()}`,
+        {
         cache: "no-store",
-      })
+        },
+      )
       if (!response.ok) {
         if (response.status === 404) {
           setBannerData([])
@@ -125,7 +141,9 @@ export default function BannerForm() {
       setIsLoadingWeeks(true)
       setWeekError(null)
       try {
-        const response = await fetch(`/api/available-weeks?year=${globalData.year}&code=banner2024`)
+        const response = await fetch(
+          `/api/available-weeks?year=${globalData.year}&code=banner2024${getBypassSuffix()}`,
+        )
         if (!response.ok) {
           throw new Error("Fehler beim Laden der verfügbaren Wochen")
         }
@@ -151,7 +169,7 @@ export default function BannerForm() {
 
   const updateUniqueWeekUrl = (year: string, week: string) => {
     const baseUrl = window.location.origin
-    const uniqueUrl = `${baseUrl}/api/banner-data?year=${year}&week=${week}&code=banner2024`
+    const uniqueUrl = `${baseUrl}/api/banner-data?year=${year}&week=${week}&code=banner2024${getBypassSuffix()}`
     setUniqueWeekUrl(uniqueUrl)
   }
 
@@ -232,14 +250,17 @@ export default function BannerForm() {
 
   const confirmSave = async () => {
     try {
-      const response = await fetch(`/api/banner-data?year=${globalData.year}&week=${globalData.week}&code=banner2024`, {
+      const response = await fetch(
+        `/api/banner-data?year=${globalData.year}&week=${globalData.week}&code=banner2024${getBypassSuffix()}`,
+        {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: jsonPreview,
         cache: "no-store",
-      })
+        },
+      )
 
       if (!response.ok) {
         const errorData = await response.json()
@@ -274,10 +295,13 @@ Gespeicherte Datei: ${result.savedUrl}`)
 
   const handleRestore = async () => {
     try {
-      const response = await fetch(`/api/banner-data?year=${globalData.year}&week=${globalData.week}&code=banner2024`, {
+      const response = await fetch(
+        `/api/banner-data?year=${globalData.year}&week=${globalData.week}&code=banner2024${getBypassSuffix()}`,
+        {
         method: "PUT",
         cache: "no-store",
-      })
+        },
+      )
       if (!response.ok) {
         throw new Error("Fehler beim Wiederherstellen des Backups")
       }
@@ -299,7 +323,7 @@ Gespeicherte Datei: ${result.savedUrl}`)
     if (window.confirm("Sind Sie sicher, dass Sie die Daten für diese Woche löschen möchten?")) {
       try {
         const response = await fetch(
-          `/api/banner-data?year=${globalData.year}&week=${globalData.week}&code=banner2024`,
+          `/api/banner-data?year=${globalData.year}&week=${globalData.week}&code=banner2024${getBypassSuffix()}`,
           {
             method: "DELETE",
             cache: "no-store",
@@ -335,7 +359,9 @@ Gelöschte Dateien: ${result.deletedFiles.join(", ")}`)
 
   const downloadJsonData = async () => {
     try {
-      const response = await fetch(`/api/banner-data?year=${globalData.year}&week=${globalData.week}&code=banner2024`)
+      const response = await fetch(
+        `/api/banner-data?year=${globalData.year}&week=${globalData.week}&code=banner2024${getBypassSuffix()}`,
+      )
       if (!response.ok) {
         throw new Error("Fehler beim Abrufen der Daten")
       }
