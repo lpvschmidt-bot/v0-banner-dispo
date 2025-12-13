@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server"
 import { getJsonData, saveJsonData, restoreBackup, deleteJsonData } from "@/app/lib/blob-storage"
 
-export const dynamic = "force_dynamic"
-
 // Hilfsfunktion zur Überprüfung des Codeworts
 function validateCode(request: Request) {
   const { searchParams } = new URL(request.url)
