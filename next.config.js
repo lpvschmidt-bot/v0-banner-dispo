@@ -2,25 +2,9 @@
 const nextConfig = {
   reactStrictMode: true,
   // Note: experimental keys removed to match the Next.js version used
+  // Keep API no-store header; avoid overriding Content-Type for static assets
   async headers() {
     return [
-      {
-        source: "/(.*)",
-        headers: [
-          {
-            key: "Content-Type",
-            value: "text/html; charset=utf-8",
-          },
-          {
-            key: "X-Content-Type-Options",
-            value: "nosniff",
-          },
-          {
-            key: "Cache-Control",
-            value: "public, max-age=31536000, immutable",
-          },
-        ],
-      },
       {
         source: "/api/(.*)",
         headers: [
