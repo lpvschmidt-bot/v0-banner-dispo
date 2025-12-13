@@ -77,7 +77,7 @@ const cleanKundeBanner = (value: string): string => {
 }
 
 export default function BannerForm() {
-  const BYPASS_TOKEN = process.env.NEXT_PUBLIC_VERCEL_BYPASS_TOKEN
+  const ENV_BYPASS_TOKEN = process.env.NEXT_PUBLIC_VERCEL_BYPASS_TOKEN
 
   const [bannerData, setBannerData] = useState<BannerData[]>([])
   const [globalData, setGlobalData] = useState<GlobalData>(() => {
@@ -93,17 +93,24 @@ export default function BannerForm() {
   const [lastModified, setLastModified] = useState<Date>(new Date())
   const [jsonPreview, setJsonPreview] = useState<string>("")
   const [isPreviewOpen, setIsPreviewOpen] = useState(false)
+  const [bypassToken, setBypassToken] = useState<string | null>(null)
+  const [showBypassHelp, setShowBypassHelp] = useState(false)
 
-  // Versuche den Vercel Deployment Protection Bypass-Cookie zu setzen (falls Token vorhanden)
+  // Initial: Token aus URL oder Env lesen und Cookie setzen
   useEffect(() => {
-    if (typeof window !== "undefined" && BYPASS_TOKEN) {
-      // Setzt das Bypass-Cookie für die Domain, damit nachfolgende API-Calls nicht geblockt werden
-      const url = `/?x-vercel-protection-bypass=${BYPASS_TOKEN}&x-vercel-set-bypass-cookie=samesitenone`
-      fetch(url).catch(() => {})
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search)
+      const urlToken = params.get("x-vercel-protection-bypass") || params.get("vbypass")
+      const token = urlToken || ENV_BYPASS_TOKEN || null
+      if (token) {
+        setBypassToken(token)
+        const url = `/?x-vercel-protection-bypass=${token}&x-vercel-set-bypass-cookie=samesitenone`
+        fetch(url).catch(() => {})
+      }
     }
-  }, [BYPASS_TOKEN])
+  }, [])
 
-  const getBypassSuffix = () => (BYPASS_TOKEN ? `&x-vercel-protection-bypass=${BYPASS_TOKEN}` : "")
+  const getBypassSuffix = () => (bypassToken ? `&x-vercel-protection-bypass=${bypassToken}` : "")
 
   const loadBannerData = useCallback(async (year: string, week: string) => {
     try {
@@ -143,6 +150,7 @@ export default function BannerForm() {
       try {
         const response = await fetch(
           `/api/available-weeks?year=${globalData.year}&code=banner2024${getBypassSuffix()}`,
+          { cache: "no-store" },
         )
         if (!response.ok) {
           throw new Error("Fehler beim Laden der verfügbaren Wochen")
@@ -152,9 +160,10 @@ export default function BannerForm() {
         if (weeks.length > 0 && !weeks.some((w) => w.week === globalData.week)) {
           setGlobalData((prev) => ({ ...prev, week: weeks[0].week }))
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error loading available weeks:", error)
         setWeekError("Fehler beim Laden der verfügbaren Wochen")
+        setShowBypassHelp(true)
       } finally {
         setIsLoadingWeeks(false)
       }
@@ -163,12 +172,20 @@ export default function BannerForm() {
   }, [globalData.year, globalData.week])
 
   useEffect(() => {
+    if (!globalData.year || !globalData.week) {
+      updateUniqueWeekUrl(globalData.year, globalData.week)
+      return
+    }
     loadBannerData(globalData.year, globalData.week)
     updateUniqueWeekUrl(globalData.year, globalData.week)
   }, [globalData.year, globalData.week, loadBannerData])
 
   const updateUniqueWeekUrl = (year: string, week: string) => {
     const baseUrl = window.location.origin
+    if (!year || !week) {
+      setUniqueWeekUrl("")
+      return
+    }
     const uniqueUrl = `${baseUrl}/api/banner-data?year=${year}&week=${week}&code=banner2024${getBypassSuffix()}`
     setUniqueWeekUrl(uniqueUrl)
   }
@@ -203,16 +220,17 @@ export default function BannerForm() {
   }
 
   const handleGlobalChange = (field: keyof GlobalData, value: string) => {
+    let next: GlobalData
     setGlobalData((prevData) => {
-      const newData = { ...prevData, [field]: value }
+      next = { ...prevData, [field]: value }
       if (field === "year") {
-        newData.week = "" // Reset week when year changes
+        next.week = "" // Reset week when year changes
       }
-      return newData
+      return next
     })
 
     if (field === "week") {
-      loadBannerData(globalData.year, value)
+      loadBannerData(next.year, next.week)
     } else {
       setBannerData(
         bannerData.map((banner) => ({
@@ -221,7 +239,7 @@ export default function BannerForm() {
         })),
       )
     }
-    updateUniqueWeekUrl(globalData.year, field === "week" ? value : globalData.week)
+    updateUniqueWeekUrl(next.year, next.week)
     setLastModified(new Date())
   }
 
@@ -418,6 +436,52 @@ Gelöschte Dateien: ${result.deletedFiles.join(", ")}`)
     <div className="space-y-8">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="space-y-2">
+          {showBypassHelp && (
+            <div className="mb-4 rounded border border-yellow-300 bg-yellow-50 p-3 text-sm">
+              <p className="mb-2">
+                Zugriff geschützt. Bitte setzen Sie den Bypass-Token (SSO-Schutz). Wenn Sie den Token
+                nicht als Umgebungsvariable gesetzt haben, fügen Sie ihn unten ein.
+              </p>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Bypass-Token einfügen"
+                  value={bypassToken ?? ""}
+                  onChange={(e) => setBypassToken(e.target.value.trim() || null)}
+                />
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    if (bypassToken) {
+                      const url = `/?x-vercel-protection-bypass=${bypassToken}&x-vercel-set-bypass-cookie=samesitenone`
+                      fetch(url)
+                        .then(() => {
+                          setShowBypassHelp(false)
+                          // Wochenliste neu laden
+                          setIsLoadingWeeks(true)
+                          setWeekError(null)
+                          fetch(`/api/available-weeks?year=${globalData.year}&code=banner2024${getBypassSuffix()}`, {
+                            cache: "no-store",
+                          })
+                            .then(async (r) => {
+                              if (!r.ok) throw new Error("Fehler beim Laden der verfügbaren Wochen")
+                              const weeks: WeekData[] = await r.json()
+                              setAvailableWeeks(weeks)
+                            })
+                            .catch((err) => {
+                              console.error(err)
+                              setWeekError("Fehler beim Laden der verfügbaren Wochen")
+                            })
+                            .finally(() => setIsLoadingWeeks(false))
+                        })
+                        .catch(() => {})
+                    }
+                  }}
+                >
+                  Zugang entsperren
+                </Button>
+              </div>
+            </div>
+          )}
           <Label htmlFor="year">Jahr</Label>
           <Select onValueChange={(value) => handleGlobalChange("year", value)} value={globalData.year}>
             <SelectTrigger id="year">
