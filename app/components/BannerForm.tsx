@@ -220,17 +220,20 @@ export default function BannerForm() {
   }
 
   const handleGlobalChange = (field: keyof GlobalData, value: string) => {
-    let next: GlobalData
-    setGlobalData((prevData) => {
-      next = { ...prevData, [field]: value }
-      if (field === "year") {
-        next.week = "" // Reset week when year changes
-      }
-      return next
-    })
+    let newYear = globalData.year
+    let newWeek = globalData.week
+    
+    if (field === "year") {
+      newYear = value
+      newWeek = "" // Reset week when year changes
+    } else {
+      newWeek = value
+    }
+    
+    setGlobalData({ year: newYear, week: newWeek })
 
     if (field === "week") {
-      loadBannerData(next.year, next.week)
+      loadBannerData(newYear, newWeek)
     } else {
       setBannerData(
         bannerData.map((banner) => ({
@@ -239,7 +242,7 @@ export default function BannerForm() {
         })),
       )
     }
-    updateUniqueWeekUrl(next.year, next.week)
+    updateUniqueWeekUrl(newYear, newWeek)
     setLastModified(new Date())
   }
 
