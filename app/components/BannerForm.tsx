@@ -561,8 +561,8 @@ Gelöschte Dateien: ${result.deletedFiles.join(", ")}`)
           >
             {sortedBannerData.map((banner, index) => (
               <AccordionItem value={banner.id} key={banner.id}>
-                <AccordionTrigger className="text-lg font-semibold" aria-label={`Banner ${index + 1}: ${banner.format}`}>
-                  Position {banner.position}: {banner.format}
+                <AccordionTrigger className="text-lg font-semibold" aria-label={`Banner ${index + 1}: ${banner.format}${banner.kundeBanner ? ` - ${banner.kundeBanner}` : ''}`}>
+                  Position {banner.position}: {banner.format}{banner.kundeBanner ? ` - ${banner.kundeBanner}` : ''}
                 </AccordionTrigger>
                 <AccordionContent>
                   <div className="space-y-4">
