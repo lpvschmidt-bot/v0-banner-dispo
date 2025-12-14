@@ -14,7 +14,7 @@ export default function Home({ searchParams }: { searchParams: any }) {
   return (
     <main className="min-h-screen bg-gradient-to-br from-emerald-400 via-cyan-500 to-blue-500">
       <div className="container mx-auto p-8">
-        <h1 className="text-4xl font-bold mb-8 text-white text-center">Banner-Designer</h1>
+        <h1 className="text-4xl font-bold mb-8 text-white text-center">Banner-Feed</h1>
         <div className="bg-white rounded-lg shadow-xl p-8">
           <BannerForm />
         </div>

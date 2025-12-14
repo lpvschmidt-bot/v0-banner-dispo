@@ -19,8 +19,8 @@ interface BannerPreviewProps {
 
 export default function BannerPreview({ banner }: BannerPreviewProps) {
   return (
-    <div className="border p-4 rounded-lg shadow-md">
-      <h3 className="text-xl font-semibold mb-2">Vorschau: {banner.format}</h3>
+    <div className="border p-4 rounded-lg shadow-md bg-white">
+      <h3 className="text-lg font-semibold mb-3">{banner.format}</h3>
       <a
         href={banner.zielUrlFinal}
         target="_blank"
@@ -30,52 +30,64 @@ export default function BannerPreview({ banner }: BannerPreviewProps) {
         aria-label={`${banner.format} Banner: ${banner.altText || "Keine Beschreibung verfügbar"}`}
       >
         {banner.format === "Topbanner" && (
-          <div className="w-full h-[90px] bg-gray-200 flex items-center justify-center overflow-hidden">
-            {banner.creative && (
+          <div className="bg-gray-200 flex items-center justify-center overflow-hidden" style={{ width: '468px', maxWidth: '100%' }}>
+            {banner.creative ? (
               <img
                 src={banner.creative}
                 alt={banner.altText}
-                className="w-full h-full object-cover"
+                className="w-full h-auto object-contain"
+                style={{ maxWidth: '468px' }}
               />
+            ) : (
+              <div className="w-full py-8 text-center text-gray-400">468px breit</div>
             )}
           </div>
         )}
         {banner.format === "Rectangle" && (
-          <div className="w-[300px] h-[250px] bg-gray-200 flex items-center justify-center overflow-hidden">
-            {banner.creative && (
+          <div className="bg-gray-200 flex items-center justify-center overflow-hidden" style={{ width: '300px', maxWidth: '100%' }}>
+            {banner.creative ? (
               <img
                 src={banner.creative}
                 alt={banner.altText}
-                className="w-full h-full object-cover"
+                className="w-full h-auto object-contain"
+                style={{ maxWidth: '300px' }}
               />
+            ) : (
+              <div className="w-full py-16 text-center text-gray-400">300px breit</div>
             )}
           </div>
         )}
         {banner.format === "Half-Page-Ad" && (
-          <div className="w-[300px] h-[600px] bg-gray-200 flex items-center justify-center overflow-hidden">
-            {banner.creative && (
+          <div className="bg-gray-200 flex items-center justify-center overflow-hidden" style={{ width: '300px', maxWidth: '100%' }}>
+            {banner.creative ? (
               <img
                 src={banner.creative}
                 alt={banner.altText}
-                className="w-full h-full object-cover"
+                className="w-full h-auto object-contain"
+                style={{ maxWidth: '300px' }}
               />
+            ) : (
+              <div className="w-full py-32 text-center text-gray-400">300px breit</div>
             )}
           </div>
         )}
         {banner.format === "Bild-Text-Anzeige" && (
-          <div className="flex flex-col space-y-4">
-            <div className="w-full h-[250px] bg-gray-200 flex items-center justify-center overflow-hidden">
-              {banner.creative && (
+          <div className="flex flex-col space-y-4" style={{ maxWidth: '300px' }}>
+            <div className="bg-gray-200 flex items-center justify-center overflow-hidden" style={{ width: '160px', maxWidth: '100%' }}>
+              {banner.creative ? (
                 <img
                   src={banner.creative}
                   alt={banner.altText}
-                  className="w-full h-full object-cover"
+                  className="w-full h-auto object-contain"
+                  style={{ maxWidth: '160px' }}
                 />
+              ) : (
+                <div className="w-full py-12 text-center text-gray-400 text-sm">160px breit</div>
               )}
             </div>
             <div className="space-y-2">
-              <h4 className="text-lg font-semibold">{banner.headline}</h4>
-              <p className="text-sm">{banner.text}</p>
+              <h4 className="text-base font-semibold">{banner.headline || 'Headline'}</h4>
+              <p className="text-sm">{banner.text || 'Text'}</p>
               <button
                 className="px-4 py-2 rounded text-sm"
                 style={{
@@ -84,7 +96,7 @@ export default function BannerPreview({ banner }: BannerPreviewProps) {
                 }}
                 aria-label={banner.cta}
               >
-                {banner.cta}
+                {banner.cta || 'mehr'}
               </button>
             </div>
           </div>

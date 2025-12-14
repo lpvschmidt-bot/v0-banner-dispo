@@ -73,16 +73,44 @@ export async function saveJsonData(year: string, week: string, data: any[]): Pro
     const jsonString = JSON.stringify(data, null, 2)
 
     if (isBlobAvailable()) {
-      // Use Vercel Blob storage; disable random suffix so read finds exact filename
+      // Use Vercel Blob storage
       const fileName = getFileName(year, week)
+      const backupFileName = `${fileName}.backup`
+      
+      const { blobs } = await list()
+      const existingBlob = blobs.find((blob) => blob.pathname === fileName)
+      const existingBackup = blobs.find((blob) => blob.pathname === backupFileName)
+
+      // Schritt 1: Alte Hauptdatei wird zum Backup (falls vorhanden)
+      if (existingBlob) {
+        console.log(`[BLOB-SAVE] Sichere aktuelle Datei als Backup: ${fileName} → ${backupFileName}`)
+        
+        // Altes Backup löschen
+        if (existingBackup) {
+          console.log(`[BLOB-SAVE] Lösche vorheriges Backup: ${backupFileName}`)
+          await del(existingBackup.url)
+        }
+        
+        // Aktuelle Datei als Backup speichern
+        const currentResponse = await fetch(existingBlob.url, { cache: "no-store" })
+        const currentData = await currentResponse.text()
+        await put(backupFileName, currentData, { 
+          access: "public", 
+          addRandomSuffix: false,
+          contentType: "application/json"
+        })
+        
+        // Alte Hauptdatei löschen
+        console.log(`[BLOB-SAVE] Lösche alte Hauptdatei: ${fileName}`)
+        await del(existingBlob.url)
+      }
+
+      // Schritt 2: Neue Daten als Hauptdatei speichern
       const jsonBlob = new Blob([jsonString], {
         type: "application/json",
       })
       const { url } = await put(fileName, jsonBlob, { access: "public", addRandomSuffix: false })
-
-      // Create backup (no random suffix)
-      const backupFileName = `${fileName}.backup`
-      await put(backupFileName, jsonBlob, { access: "public", addRandomSuffix: false })
+      console.log(`[BLOB-SAVE] Neue Hauptdatei gespeichert: ${fileName}`)
 
       return url
     } else {

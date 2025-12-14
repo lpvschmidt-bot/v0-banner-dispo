@@ -435,284 +435,317 @@ Gelöschte Dateien: ${result.deletedFiles.join(", ")}`)
     handleSave(bannerData)
   }
 
+  // Banner nach Position sortieren
+  const sortedBannerData = [...bannerData].sort((a, b) => {
+    const posA = parseInt(a.position) || 0
+    const posB = parseInt(b.position) || 0
+    return posA - posB
+  })
+
   return (
     <div className="space-y-8">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="space-y-2">
-          {showBypassHelp && (
-            <div className="mb-4 rounded border border-yellow-300 bg-yellow-50 p-3 text-sm">
-              <p className="mb-2">
-                Zugriff geschützt. Bitte setzen Sie den Bypass-Token (SSO-Schutz). Wenn Sie den Token
-                nicht als Umgebungsvariable gesetzt haben, fügen Sie ihn unten ein.
-              </p>
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Bypass-Token einfügen"
-                  value={bypassToken ?? ""}
-                  onChange={(e) => setBypassToken(e.target.value.trim() || null)}
-                />
-                <Button
-                  variant="secondary"
-                  onClick={() => {
-                    if (bypassToken) {
-                      const url = `/?x-vercel-protection-bypass=${bypassToken}&x-vercel-set-bypass-cookie=samesitenone`
-                      fetch(url)
-                        .then(() => {
-                          setShowBypassHelp(false)
-                          // Wochenliste neu laden
-                          setIsLoadingWeeks(true)
-                          setWeekError(null)
-                          fetch(`/api/available-weeks?year=${globalData.year}&code=banner2024${getBypassSuffix()}`, {
-                            cache: "no-store",
-                          })
-                            .then(async (r) => {
-                              if (!r.ok) throw new Error("Fehler beim Laden der verfügbaren Wochen")
-                              const weeks: WeekData[] = await r.json()
-                              setAvailableWeeks(weeks)
-                            })
-                            .catch((err) => {
-                              console.error(err)
-                              setWeekError("Fehler beim Laden der verfügbaren Wochen")
-                            })
-                            .finally(() => setIsLoadingWeeks(false))
-                        })
-                        .catch(() => {})
-                    }
-                  }}
-                >
-                  Zugang entsperren
-                </Button>
-              </div>
-            </div>
-          )}
-          <Label htmlFor="year">Jahr</Label>
-          <Select onValueChange={(value) => handleGlobalChange("year", value)} value={globalData.year}>
-            <SelectTrigger id="year">
-              <SelectValue placeholder="Wählen Sie ein Jahr" />
-            </SelectTrigger>
-            <SelectContent>
-              {[...Array(5)].map((_, i) => {
-                const year = (new Date().getFullYear() + i - 2).toString()
-                return (
-                  <SelectItem key={year} value={year}>
-                    {year}
-                  </SelectItem>
-                )
-              })}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="week">Kalenderwoche</Label>
-          <Select
-            onValueChange={(value) => handleGlobalChange("week", value)}
-            value={globalData.week}
-            disabled={isLoadingWeeks}
-          >
-            <SelectTrigger id="week">
-              <SelectValue placeholder={isLoadingWeeks ? "Laden..." : "Wählen Sie eine Kalenderwoche"} />
-            </SelectTrigger>
-            <SelectContent>
-              {availableWeeks.map((weekData) => (
-                <SelectItem key={weekData.week} value={weekData.week}>
-                  KW {weekData.week} {!weekData.exists && "(Neu)"}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {weekError && <p className="text-red-500 text-sm">{weekError}</p>}
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="currentFile">Aktuelle Datei</Label>
-          <Input id="currentFile" value={`banner-data-${globalData.year}-KW${globalData.week}.json`} readOnly />
-        </div>
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="uniqueUrl">Eindeutige URL für diese Woche</Label>
-        <Input id="uniqueUrl" value={uniqueWeekUrl} readOnly />
-      </div>
-      <Accordion
-        type="single"
-        collapsible
-        className="w-full"
-        value={openAccordionId || undefined}
-        onValueChange={(value) => setOpenAccordionId(value)}
-      >
-        {bannerData.map((banner, index) => (
-          <AccordionItem value={banner.id} key={banner.id}>
-            <AccordionTrigger className="text-lg font-semibold" aria-label={`Banner ${index + 1}: ${banner.format}`}>
-              Banner {index + 1}: {banner.format}
-            </AccordionTrigger>
-            <AccordionContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor={`position-${banner.id}`}>Position</Label>
-                      <Select
-                        onValueChange={(value) => handleChange(banner.id, "position", value)}
-                        value={banner.position}
-                      >
-                        <SelectTrigger id={`position-${banner.id}`}>
-                          <SelectValue placeholder="Wählen Sie eine Position" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {[...Array(15)].map((_, i) => (
-                            <SelectItem key={i} value={(i + 1).toString()}>
-                              {i + 1}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor={`format-${banner.id}`}>Format</Label>
-                      <Select onValueChange={(value) => handleChange(banner.id, "format", value)} value={banner.format}>
-                        <SelectTrigger id={`format-${banner.id}`}>
-                          <SelectValue placeholder="Wählen Sie ein Format" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Topbanner">Topbanner</SelectItem>
-                          <SelectItem value="Rectangle">Rectangle</SelectItem>
-                          <SelectItem value="Half-Page-Ad">Half-Page-Ad</SelectItem>
-                          <SelectItem value="Bild-Text-Anzeige">Bild-Text-Anzeige</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor={`kundeBanner-${banner.id}`}>Kunde_Banner</Label>
-                    <Input
-                      id={`kundeBanner-${banner.id}`}
-                      name={`kundeBanner-${banner.id}`}
-                      value={banner.kundeBanner}
-                      onChange={(e) => handleChange(banner.id, "kundeBanner", cleanKundeBanner(e.target.value))}
-                      aria-label="Kunde Banner"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor={`creative-${banner.id}`}>Creative URL</Label>
-                    <Input
-                      id={`creative-${banner.id}`}
-                      name={`creative-${banner.id}`}
-                      value={banner.creative}
-                      onChange={(e) => handleChange(banner.id, "creative", e.target.value)}
-                      aria-label="Creative URL"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor={`altText-${banner.id}`}>Alt-Text</Label>
-                    <Input
-                      id={`altText-${banner.id}`}
-                      name={`altText-${banner.id}`}
-                      value={banner.altText}
-                      onChange={(e) => handleChange(banner.id, "altText", e.target.value)}
-                      aria-label="Alt-Text"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor={`clickUrl-${banner.id}`}>Click-URL</Label>
-                    <Input
-                      id={`clickUrl-${banner.id}`}
-                      name={`clickUrl-${banner.id}`}
-                      value={banner.clickUrl}
-                      onChange={(e) => handleChange(banner.id, "clickUrl", e.target.value)}
-                      aria-label="Click-URL"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor={`zielUrlFinal-${banner.id}`}>Ziel-URL final</Label>
-                    <Input
-                      id={`zielUrlFinal-${banner.id}`}
-                      name={`zielUrlFinal-${banner.id}`}
-                      value={banner.zielUrlFinal}
-                      readOnly
-                      aria-label="Ziel-URL final"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor={`trackingPixel-${banner.id}`}>Tracking-Pixel</Label>
-                    <Input
-                      id={`trackingPixel-${banner.id}`}
-                      name={`trackingPixel-${banner.id}`}
-                      value={banner.trackingPixel}
-                      onChange={(e) => handleChange(banner.id, "trackingPixel", e.target.value)}
-                      aria-label="Tracking-Pixel"
-                    />
-                  </div>
-                  {banner.format === "Bild-Text-Anzeige" && (
-                    <>
-                      <div className="space-y-2">
-                        <Label htmlFor={`headline-${banner.id}`}>Headline</Label>
-                        <Input
-                          id={`headline-${banner.id}`}
-                          name={`headline-${banner.id}`}
-                          value={banner.headline}
-                          onChange={(e) => handleChange(banner.id, "headline", e.target.value)}
-                          aria-label="Headline"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor={`text-${banner.id}`}>Text</Label>
-                        <Textarea
-                          id={`text-${banner.id}`}
-                          name={`text-${banner.id}`}
-                          value={banner.text}
-                          onChange={(e) => handleChange(banner.id, "text", e.target.value)}
-                          rows={3}
-                          aria-label="Text"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor={`cta-${banner.id}`}>CTA</Label>
-                        <Input
-                          id={`cta-${banner.id}`}
-                          name={`cta-${banner.id}`}
-                          value={banner.cta}
-                          onChange={(e) => handleChange(banner.id, "cta", e.target.value)}
-                          aria-label="CTA"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor={`buttonTextColor-${banner.id}`}>Button Textfarbe (HEX)</Label>
-                        <Input
-                          id={`buttonTextColor-${banner.id}`}
-                          name={`buttonTextColor-${banner.id}`}
-                          type="color"
-                          value={banner.buttonTextColor}
-                          onChange={(e) => handleChange(banner.id, "buttonTextColor", e.target.value)}
-                          aria-label="Button Textfarbe"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor={`buttonBackgroundColor-${banner.id}`}>Button Hintergrundfarbe (HEX)</Label>
-                        <Input
-                          id={`buttonBackgroundColor-${banner.id}`}
-                          name={`buttonBackgroundColor-${banner.id}`}
-                          type="color"
-                          value={banner.buttonBackgroundColor}
-                          onChange={(e) => handleChange(banner.id, "buttonBackgroundColor", e.target.value)}
-                          aria-label="Button Hintergrundfarbe"
-                        />
-                      </div>
-                    </>
-                  )}
+      {/* Globale Einstellungen */}
+      <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="space-y-2">
+            {showBypassHelp && (
+              <div className="mb-4 rounded border border-yellow-300 bg-yellow-50 p-3 text-sm">
+                <p className="mb-2">
+                  Zugriff geschützt. Bitte setzen Sie den Bypass-Token (SSO-Schutz). Wenn Sie den Token
+                  nicht als Umgebungsvariable gesetzt haben, fügen Sie ihn unten ein.
+                </p>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Bypass-Token einfügen"
+                    value={bypassToken ?? ""}
+                    onChange={(e) => setBypassToken(e.target.value.trim() || null)}
+                  />
                   <Button
-                    variant="destructive"
-                    onClick={() => removeBanner(banner.id)}
-                    aria-label={`Banner ${banner.id} entfernen`}
+                    variant="secondary"
+                    onClick={() => {
+                      if (bypassToken) {
+                        const url = `/?x-vercel-protection-bypass=${bypassToken}&x-vercel-set-bypass-cookie=samesitenone`
+                        fetch(url)
+                          .then(() => {
+                            setShowBypassHelp(false)
+                            // Wochenliste neu laden
+                            setIsLoadingWeeks(true)
+                            setWeekError(null)
+                            fetch(`/api/available-weeks?year=${globalData.year}&code=banner2024${getBypassSuffix()}`, {
+                              cache: "no-store",
+                            })
+                              .then(async (r) => {
+                                if (!r.ok) throw new Error("Fehler beim Laden der verfügbaren Wochen")
+                                const weeks: WeekData[] = await r.json()
+                                setAvailableWeeks(weeks)
+                              })
+                              .catch((err) => {
+                                console.error(err)
+                                setWeekError("Fehler beim Laden der verfügbaren Wochen")
+                              })
+                              .finally(() => setIsLoadingWeeks(false))
+                          })
+                          .catch(() => {})
+                      }
+                    }}
                   >
-                    Banner entfernen
+                    Zugang entsperren
                   </Button>
                 </div>
-                <div>
+              </div>
+            )}
+            <Label htmlFor="year">Jahr</Label>
+            <Select onValueChange={(value) => handleGlobalChange("year", value)} value={globalData.year}>
+              <SelectTrigger id="year">
+                <SelectValue placeholder="Wählen Sie ein Jahr" />
+              </SelectTrigger>
+              <SelectContent>
+                {[...Array(5)].map((_, i) => {
+                  const year = (new Date().getFullYear() + i - 2).toString()
+                  return (
+                    <SelectItem key={year} value={year}>
+                      {year}
+                    </SelectItem>
+                  )
+                })}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="week">Kalenderwoche</Label>
+            <Select
+              onValueChange={(value) => handleGlobalChange("week", value)}
+              value={globalData.week}
+              disabled={isLoadingWeeks}
+            >
+              <SelectTrigger id="week">
+                <SelectValue placeholder={isLoadingWeeks ? "Laden..." : "Wählen Sie eine Kalenderwoche"} />
+              </SelectTrigger>
+              <SelectContent>
+                {availableWeeks.map((weekData) => (
+                  <SelectItem key={weekData.week} value={weekData.week}>
+                    KW {weekData.week} {!weekData.exists && "(Neu)"}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {weekError && <p className="text-red-500 text-sm">{weekError}</p>}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="currentFile">Aktuelle Datei</Label>
+            <Input id="currentFile" value={`banner-data-${globalData.year}-KW${globalData.week}.json`} readOnly />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="uniqueUrl">Eindeutige URL für diese Woche</Label>
+          <Input id="uniqueUrl" value={uniqueWeekUrl} readOnly />
+        </div>
+      </div>
+
+      {/* Zwei-Spalten-Layout: Links Formular, Rechts Preview */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Linke Spalte: Akkordeon mit Formularen */}
+        <div className="space-y-4">
+          <Accordion
+            type="single"
+            collapsible
+            className="w-full"
+            value={openAccordionId || undefined}
+            onValueChange={(value) => setOpenAccordionId(value)}
+          >
+            {sortedBannerData.map((banner, index) => (
+              <AccordionItem value={banner.id} key={banner.id}>
+                <AccordionTrigger className="text-lg font-semibold" aria-label={`Banner ${index + 1}: ${banner.format}`}>
+                  Position {banner.position}: {banner.format}
+                </AccordionTrigger>
+                <AccordionContent>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor={`position-${banner.id}`}>Position</Label>
+                        <Select
+                          onValueChange={(value) => handleChange(banner.id, "position", value)}
+                          value={banner.position}
+                        >
+                          <SelectTrigger id={`position-${banner.id}`}>
+                            <SelectValue placeholder="Wählen Sie eine Position" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {[...Array(15)].map((_, i) => (
+                              <SelectItem key={i} value={(i + 1).toString()}>
+                                {i + 1}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor={`format-${banner.id}`}>Format</Label>
+                        <Select onValueChange={(value) => handleChange(banner.id, "format", value)} value={banner.format}>
+                          <SelectTrigger id={`format-${banner.id}`}>
+                            <SelectValue placeholder="Wählen Sie ein Format" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Topbanner">Topbanner</SelectItem>
+                            <SelectItem value="Rectangle">Rectangle</SelectItem>
+                            <SelectItem value="Half-Page-Ad">Half-Page-Ad</SelectItem>
+                            <SelectItem value="Bild-Text-Anzeige">Bild-Text-Anzeige</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor={`kundeBanner-${banner.id}`}>Kunde_Banner</Label>
+                      <Input
+                        id={`kundeBanner-${banner.id}`}
+                        name={`kundeBanner-${banner.id}`}
+                        value={banner.kundeBanner}
+                        onChange={(e) => handleChange(banner.id, "kundeBanner", cleanKundeBanner(e.target.value))}
+                        aria-label="Kunde Banner"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor={`creative-${banner.id}`}>Creative URL</Label>
+                      <Input
+                        id={`creative-${banner.id}`}
+                        name={`creative-${banner.id}`}
+                        value={banner.creative}
+                        onChange={(e) => handleChange(banner.id, "creative", e.target.value)}
+                        aria-label="Creative URL"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor={`altText-${banner.id}`}>Alt-Text</Label>
+                      <Input
+                        id={`altText-${banner.id}`}
+                        name={`altText-${banner.id}`}
+                        value={banner.altText}
+                        onChange={(e) => handleChange(banner.id, "altText", e.target.value)}
+                        aria-label="Alt-Text"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor={`clickUrl-${banner.id}`}>Click-URL</Label>
+                      <Input
+                        id={`clickUrl-${banner.id}`}
+                        name={`clickUrl-${banner.id}`}
+                        value={banner.clickUrl}
+                        onChange={(e) => handleChange(banner.id, "clickUrl", e.target.value)}
+                        aria-label="Click-URL"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor={`zielUrlFinal-${banner.id}`}>Ziel-URL final</Label>
+                      <Input
+                        id={`zielUrlFinal-${banner.id}`}
+                        name={`zielUrlFinal-${banner.id}`}
+                        value={banner.zielUrlFinal}
+                        readOnly
+                        aria-label="Ziel-URL final"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor={`trackingPixel-${banner.id}`}>Tracking-Pixel</Label>
+                      <Input
+                        id={`trackingPixel-${banner.id}`}
+                        name={`trackingPixel-${banner.id}`}
+                        value={banner.trackingPixel}
+                        onChange={(e) => handleChange(banner.id, "trackingPixel", e.target.value)}
+                        aria-label="Tracking-Pixel"
+                      />
+                    </div>
+                    {banner.format === "Bild-Text-Anzeige" && (
+                      <>
+                        <div className="space-y-2">
+                          <Label htmlFor={`headline-${banner.id}`}>Headline</Label>
+                          <Input
+                            id={`headline-${banner.id}`}
+                            name={`headline-${banner.id}`}
+                            value={banner.headline}
+                            onChange={(e) => handleChange(banner.id, "headline", e.target.value)}
+                            aria-label="Headline"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor={`text-${banner.id}`}>Text</Label>
+                          <Textarea
+                            id={`text-${banner.id}`}
+                            name={`text-${banner.id}`}
+                            value={banner.text}
+                            onChange={(e) => handleChange(banner.id, "text", e.target.value)}
+                            rows={3}
+                            aria-label="Text"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor={`cta-${banner.id}`}>CTA</Label>
+                          <Input
+                            id={`cta-${banner.id}`}
+                            name={`cta-${banner.id}`}
+                            value={banner.cta}
+                            onChange={(e) => handleChange(banner.id, "cta", e.target.value)}
+                            aria-label="CTA"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor={`buttonTextColor-${banner.id}`}>Button Textfarbe (HEX)</Label>
+                          <Input
+                            id={`buttonTextColor-${banner.id}`}
+                            name={`buttonTextColor-${banner.id}`}
+                            type="color"
+                            value={banner.buttonTextColor}
+                            onChange={(e) => handleChange(banner.id, "buttonTextColor", e.target.value)}
+                            aria-label="Button Textfarbe"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor={`buttonBackgroundColor-${banner.id}`}>Button Hintergrundfarbe (HEX)</Label>
+                          <Input
+                            id={`buttonBackgroundColor-${banner.id}`}
+                            name={`buttonBackgroundColor-${banner.id}`}
+                            type="color"
+                            value={banner.buttonBackgroundColor}
+                            onChange={(e) => handleChange(banner.id, "buttonBackgroundColor", e.target.value)}
+                            aria-label="Button Hintergrundfarbe"
+                          />
+                        </div>
+                      </>
+                    )}
+                    <Button
+                      variant="destructive"
+                      onClick={() => removeBanner(banner.id)}
+                      aria-label={`Banner ${banner.id} entfernen`}
+                    >
+                      Banner entfernen
+                    </Button>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        </div>
+
+        {/* Rechte Spalte: Fixe Preview */}
+        <div className="space-y-4 lg:sticky lg:top-4 lg:self-start">
+          <h3 className="text-xl font-semibold">Live-Vorschau</h3>
+          {bannerData.length === 0 ? (
+            <div className="border p-8 rounded-lg text-center text-gray-500">
+              Keine Banner vorhanden. Fügen Sie einen Banner hinzu.
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {sortedBannerData.map((banner) => (
+                <div key={banner.id}>
+                  <div className="text-sm font-medium text-gray-600 mb-2">Position {banner.position}</div>
                   <BannerPreview banner={banner} />
                 </div>
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-        ))}
-      </Accordion>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Aktionsbuttons */}
       <div className="flex flex-wrap gap-4">
         <Button
           onClick={addNewBanner}
