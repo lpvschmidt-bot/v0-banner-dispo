@@ -260,7 +260,13 @@ export default function BannerForm() {
 
   const handleSave = async (data: BannerData[]) => {
     try {
-      const jsonString = JSON.stringify(data, null, 2)
+      // Sortiere Banner nach Position vor dem Speichern
+      const sortedData = [...data].sort((a, b) => {
+        const posA = parseInt(a.position) || 0
+        const posB = parseInt(b.position) || 0
+        return posA - posB
+      })
+      const jsonString = JSON.stringify(sortedData, null, 2)
       setJsonPreview(jsonString)
       setIsPreviewOpen(true)
     } catch (error) {
