@@ -1,39 +1,33 @@
 # Technische Anleitung: API-Zugriff für Newsletter-System
 
-## Was ist passiert?
+## Aktueller Stand (15. Dezember 2025)
 
-Vercel Deployment Protection wurde für die Production-Domain aktiviert und blockiert externe API-Zugriffe ohne zusätzlichen Token.
+**Gute Nachricht:** Die API funktioniert aktuell **ohne** zusätzlichen Bypass-Token.
 
-## Erforderliche Änderung
-
-Deine API-Calls benötigen jetzt einen zusätzlichen Query-Parameter.
-
-### Alter Aufruf (funktioniert nicht mehr)
+### Production-URLs (funktionieren):
 ```
-https://[domain]/api/banner-data?year=2025&week=50&code=banner2024
+https://zu678bannerv0da.lp-tools.de/api/banner-data?year=2025&week=50&code=banner2024
 ```
 
-### Neuer Aufruf (mit Bypass-Token)
-```
-https://[domain]/api/banner-data?year=2025&week=50&code=banner2024&x-vercel-protection-bypass=vbEIo2xRWyzzFFTCt6TG6qK1oWldmRV1
-```
+**Nur der `?code=banner2024` Parameter ist erforderlich.**
 
-## Der zusätzliche Parameter
+## Was war das Problem?
+
+Am Freitag war die API durch Vercel Deployment Protection temporär blockiert. Das Problem ist aktuell behoben.
+
+## Erforderliche Änderung für Newsletter-System
+
+**Keine Änderung nötig!** Die bisherige API-URL funktioniert weiterhin:
 
 ```
-&x-vercel-protection-bypass=vbEIo2xRWyzzFFTCt6TG6qK1oWldmRV1
-```
-
-**Bypass-Token:**
-```
-vbEIo2xRWyzzFFTCt6TG6qK1oWldmRV1
+GET https://zu678bannerv0da.lp-tools.de/api/banner-data?year=2025&week=50&code=banner2024
 ```
 
 ## Test
 
 ### cURL-Beispiel
 ```bash
-curl "https://[domain]/api/banner-data?year=2025&week=50&code=banner2024&x-vercel-protection-bypass=vbEIo2xRWyzzFFTCt6TG6qK1oWldmRV1"
+curl "https://zu678bannerv0da.lp-tools.de/api/banner-data?year=2025&week=50&code=banner2024"
 ```
 
 ### Erwartete Response
@@ -51,41 +45,51 @@ JSON-Array mit Banner-Objekten (Status 200), z.B.:
 ]
 ```
 
-### Fehler ohne Token
-- Status: 401 oder 403
-- Bedeutung: Deployment Protection blockiert den Zugriff
-
 ## Was du tun musst
 
-1. **Bypass-Token zu deinen API-Calls hinzufügen**
-   - Hänge `&x-vercel-protection-bypass=vbEIo2xRWyzzFFTCt6TG6qK1oWldmRV1` an alle Banner-API-Aufrufe an
-   
-2. **Testen**
-   - Führe einen Test-Call mit dem Token durch
-   - Verifiziere, dass du JSON-Daten statt 401/403 erhältst
+**Nichts!** Die API funktioniert wie bisher.
 
-3. **Deployment**
-   - Keine weiteren Änderungen nötig
-   - JSON-Format bleibt unverändert
+1. **Verwende die bekannte URL:**
+   ```
+   https://zu678bannerv0da.lp-tools.de/api/banner-data?year=YYYY&week=WW&code=banner2024
+   ```
+
+2. **Teste einmal, dass es funktioniert:**
+   - Status 200 = alles ok
+   - JSON-Daten werden zurückgegeben
+
+3. **Falls zukünftig Probleme auftreten:**
+   - Melde dich sofort
+   - Es könnte erneut ein Vercel-Security-Update sein
 
 ## API-Endpunkte
 
 ### Banner-Daten abrufen
 ```
-GET /api/banner-data?year=YYYY&week=WW&code=banner2024&x-vercel-protection-bypass=vbEIo2xRWyzzFFTCt6TG6qK1oWldmRV1
+GET https://zu678bannerv0da.lp-tools.de/api/banner-data?year=YYYY&week=WW&code=banner2024
 ```
 
 ### Verfügbare Wochen abrufen
 ```
-GET /api/available-weeks?year=YYYY&code=banner2024&x-vercel-protection-bypass=vbEIo2xRWyzzFFTCt6TG6qK1oWldmRV1
+GET https://zu678bannerv0da.lp-tools.de/api/available-weeks?year=YYYY&code=banner2024
 ```
 
 ## Wichtig
 
-- **Der Bypass-Token muss dauerhaft in deinem System hinterlegt werden**
-- Ohne Token = 403 Fehler
-- Token ist projektspezifisch und ändert sich nicht automatisch
-- Beide Parameter (`code` + `x-vercel-protection-bypass`) sind jetzt erforderlich
+- **Nur `?code=banner2024` ist erforderlich**
+- Kein zusätzlicher Token nötig
+- JSON-Format bleibt unverändert
+- Bei Problemen sofort melden (könnte erneut Vercel-Security-Update sein)
+
+## Monitoring-Empfehlung
+
+Um zukünftige Ausfälle zu vermeiden, könnte ein täglicher Check sinnvoll sein:
+```bash
+# Täglich automatisch testen:
+curl -I "https://zu678bannerv0da.lp-tools.de/api/banner-data?year=2025&week=01&code=banner2024"
+# Erwarteter Status: 200
+# Bei 401/403 → Alarm auslösen
+```
 
 ## Fragen?
 
@@ -93,4 +97,4 @@ Bei Problemen oder für einen gemeinsamen Test-Call melde dich.
 
 ---
 
-*Letzte Aktualisierung: 14. Dezember 2025*
+*Letzte Aktualisierung: 15. Dezember 2025 - API funktioniert ohne Bypass-Token*
